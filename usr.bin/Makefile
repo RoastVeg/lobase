@@ -7,6 +7,6 @@ SUBDIR=	apply awk basename bc biff cal calendar cmp colrm col column comm \
 	sort spell split stat tail tee telnet tftp time touch tr true tsort tty \
 	ul units uname unexpand uniq unvis uudecode uuencode vacation vis wc what \
 	which xinstall htpasswd cu newsyslog banner cap_mkdb unifdef whois xargs \
-	csplit compress ctags deroff yes
+	csplit compress ctags deroff yes who users
 SKIPDIR=file ftp cu
 include ${.TOPDIR}/mk/bsd.subdir.mk
