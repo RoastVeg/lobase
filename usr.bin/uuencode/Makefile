@@ -4,6 +4,6 @@
 
 PROG=	uuencode
 MAN=	uuencode.1 uuencode.5
-LINKS=	${BINDIR}/uuencode ${BINDIR}/b64encode
+LINKS=	uuencode ${DESTDIR}${BINDIR}/b64encode
 
 include ${.TOPDIR}/mk/bsd.prog.mk

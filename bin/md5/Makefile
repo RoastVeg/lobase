@@ -5,10 +5,10 @@
 PROG=	md5
 SRCS=	crc.c md5.c
 MAN=	cksum.1 md5.1
-LINKS=	${BINDIR}/md5 ${BINDIR}/sha1 \
-	${BINDIR}/md5 ${BINDIR}/sha256 \
-	${BINDIR}/md5 ${BINDIR}/sha512 \
-	${BINDIR}/md5 ${BINDIR}/cksum
+LINKS=	md5 ${DESTDIR}${BINDIR}/sha1 \
+	md5 ${DESTDIR}${BINDIR}/sha256 \
+	md5 ${DESTDIR}${BINDIR}/sha512 \
+	md5 ${DESTDIR}${BINDIR}/cksum
 
 CPPFLAGS+= -I${.CURDIR}
 COPTS+=	-Wall -Wconversion -Wmissing-prototypes

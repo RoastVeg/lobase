@@ -5,7 +5,7 @@
 PROG=	id
 MAN=	id.1 groups.1 whoami.1
 
-LINKS=	${BINDIR}/id ${BINDIR}/groups \
-	${BINDIR}/id ${BINDIR}/whoami
+LINKS=	id ${DESTDIR}${BINDIR}/groups \
+	id ${DESTDIR}${BINDIR}/whoami
 
 include ${.TOPDIR}/mk/bsd.prog.mk

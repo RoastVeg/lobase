@@ -3,7 +3,7 @@
 .TOPDIR?=../..
 
 PROG=	uudecode
-LINKS=	${BINDIR}/uudecode ${BINDIR}/b64decode
+LINKS=	uudecode ${DESTDIR}${BINDIR}/b64decode
 NOMAN=	noman
 
 include ${.TOPDIR}/mk/bsd.prog.mk

@@ -9,10 +9,10 @@ SRCS=	ci.c co.c ident.c merge.c rcsclean.c rcsdiff.c rcsmerge.c rcsparse.c \
 	rcsprog.c rlog.c rcsutil.c buf.c date.y diff.c diff3.c rcs.c rcsnum.c \
 	rcstime.c worklist.c xmalloc.c
 
-LINKS=	${BINDIR}/rcs ${BINDIR}/ci ${BINDIR}/rcs ${BINDIR}/co \
-	${BINDIR}/rcs ${BINDIR}/ident ${BINDIR}/rcs ${BINDIR}/merge \
-	${BINDIR}/rcs ${BINDIR}/rcsclean ${BINDIR}/rcs ${BINDIR}/rcsdiff \
-	${BINDIR}/rcs ${BINDIR}/rcsmerge ${BINDIR}/rcs ${BINDIR}/rlog
+LINKS=	rcs ${DESTDIR}${BINDIR}/ci rcs ${DESTDIR}${BINDIR}/co \
+	rcs ${DESTDIR}${BINDIR}/ident rcs ${DESTDIR}${BINDIR}/merge \
+	rcs ${DESTDIR}${BINDIR}/rcsclean rcs ${DESTDIR}${BINDIR}/rcsdiff \
+	rcs ${DESTDIR}${BINDIR}/rcsmerge rcs ${DESTDIR}${BINDIR}/rlog
 
 CPPFLAGS+=-I${.CURDIR}
 CFLAGS+=-Wall

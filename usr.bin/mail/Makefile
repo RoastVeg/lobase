@@ -8,7 +8,7 @@ SRCS=	version.c aux.c cmd1.c cmd2.c cmd3.c cmdtab.c collect.c \
 	popen.c quit.c send.c strings.c temp.c tty.c vars.c
 SFILES=	mail.help mail.tildehelp
 EFILES=	mail.rc
-LINKS=	${BINDIR}/mail ${BINDIR}/Mail ${BINDIR}/mail ${BINDIR}/mailx
+LINKS=	mail ${DESTDIR}${BINDIR}/Mail mail ${DESTDIR}${BINDIR}/mailx
 CPPFLAGS+=	-D'_PATH_HELP="${SHAREDIR}/misc/mail.help"'
 CPPFLAGS+=	-D'_PATH_TILDE="${SHAREDIR}/misc/mail.tildehelp"'
 

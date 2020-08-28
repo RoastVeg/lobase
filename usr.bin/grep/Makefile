@@ -4,11 +4,11 @@
 
 PROG=	grep
 SRCS=	binary.c file.c grep.c mmfile.c queue.c util.c
-LINKS=	${BINDIR}/grep ${BINDIR}/egrep \
-	${BINDIR}/grep ${BINDIR}/fgrep \
-	${BINDIR}/grep ${BINDIR}/zgrep \
-	${BINDIR}/grep ${BINDIR}/zegrep \
-	${BINDIR}/grep ${BINDIR}/zfgrep \
+LINKS=	grep ${DESTDIR}${BINDIR}/egrep \
+	grep ${DESTDIR}${BINDIR}/fgrep \
+	grep ${DESTDIR}${BINDIR}/zgrep \
+	grep ${DESTDIR}${BINDIR}/zegrep \
+	grep ${DESTDIR}${BINDIR}/zfgrep \
 
 CFLAGS+= -Wall
 

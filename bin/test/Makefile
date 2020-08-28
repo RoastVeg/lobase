@@ -3,6 +3,6 @@
 .TOPDIR?=../..
 
 PROG=	test
-LINKS=	${BINDIR}/test ${BINDIR}/[
+LINKS=	test ${DESTDIR}${BINDIR}/[
 
 include ${.TOPDIR}/mk/bsd.prog.mk
