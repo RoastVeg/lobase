@@ -21,11 +21,7 @@ bc.c bc.h: bc.y
 scan.o: bc.h
 
 beforeinstall:
-	${INSTALL} -d -m 755 ${DESTDIR}${SHAREDIR}/misc
-	${INSTALL} ${INSTALL_COPY} -o ${BINOWN} -g ${BINGRP} -m 444 \
-		${.CURDIR}/bc.library ${DESTDIR}${SHAREDIR}/misc
-
-# XXX: replace with make depends
-scan.o : y.tab.h
+	install -c -o ${BINOWN} -g ${BINGRP} -m 444 ${.CURDIR}/bc.library \
+	    ${DESTDIR}/usr/share/misc
 
 include ${.TOPDIR}/mk/bsd.prog.mk
