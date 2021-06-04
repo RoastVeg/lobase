@@ -1,4 +1,4 @@
-/*	$OpenBSD: look.c,v 1.21 2017/01/21 10:03:27 krw Exp $	*/
+/*	$OpenBSD: look.c,v 1.23 2019/06/28 13:35:01 deraadt Exp $	*/
 /*	$NetBSD: look.c,v 1.7 1995/08/31 22:41:02 jtc Exp $	*/
 
 /*-
@@ -77,9 +77,6 @@ main(int argc, char *argv[])
 	int ch, fd, termchar;
 	char *back, *file, *front, *string, *p;
 
-	if (pledge("stdio rpath", NULL) == -1)
-		err(1, "pledge");
-
 	file = _PATH_WORDS;
 	termchar = '\0';
 	while ((ch = getopt(argc, argv, "dft:")) != -1)
@@ -113,10 +110,15 @@ main(int argc, char *argv[])
 		usage();
 	}
 
+	if (unveil(file, "r") == -1)
+		err(2, "unveil");
+	if (pledge("stdio rpath", NULL) == -1)
+		err(2, "pledge");
+
 	if (termchar != '\0' && (p = strchr(string, termchar)) != NULL)
 		*++p = '\0';
 
-	if ((fd = open(file, O_RDONLY, 0)) < 0 || fstat(fd, &sb))
+	if ((fd = open(file, O_RDONLY, 0)) == -1 || fstat(fd, &sb) == -1)
 		err(2, "%s", file);
 	if (sb.st_size > SIZE_MAX)
 		errc(2, EFBIG, "%s", file);

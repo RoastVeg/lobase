@@ -1,4 +1,4 @@
-/*	$OpenBSD: complete.c,v 1.31 2017/08/01 15:04:44 anton Exp $	*/
+/*	$OpenBSD: complete.c,v 1.33 2019/05/16 12:44:17 florian Exp $	*/
 /*	$NetBSD: complete.c,v 1.10 1997/08/18 10:20:18 lukem Exp $	*/
 
 /*-
@@ -179,7 +179,7 @@ complete_local(char *word, int list)
 	for (dp = readdir(dd); dp != NULL; dp = readdir(dd)) {
 		if (!strcmp(dp->d_name, ".") || !strcmp(dp->d_name, ".."))
 			continue;
-		if (strlen(file) > D_NAMLEN(dp))
+		if (strlen(file) > dp->d_namlen)
 			continue;
 		if (strncmp(file, dp->d_name, strlen(file)) == 0) {
 			char *tcp;

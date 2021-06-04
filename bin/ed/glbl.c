@@ -1,4 +1,4 @@
-/*	$OpenBSD: glbl.c,v 1.19 2017/04/26 21:25:43 naddy Exp $	*/
+/*	$OpenBSD: glbl.c,v 1.20 2018/06/04 13:26:21 martijn Exp $	*/
 /*	$NetBSD: glbl.c,v 1.2 1995/03/21 09:04:41 cgd Exp $	*/
 
 /* glob.c: This file contains the global command routines for the ed line

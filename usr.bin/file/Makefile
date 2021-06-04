@@ -25,15 +25,17 @@ CLEANFILES+=	magic post-magic
 MAG1=		$(.CURDIR)/magdir/Header \
 		$(.CURDIR)/magdir/Localstuff \
 		$(.CURDIR)/magdir/OpenBSD
-MAGFILES=	$(.CURDIR)/magdir/[0-9a-z]*
+#MAGFILES=	$(.CURDIR)/magdir/[0-9a-z]*
 
-post-magic: $(MAGFILES)
-	for i in ${.ALLSRC:N*.orig}; do \
+post-magic: #$(MAGFILES)
+#	for i in ${.ALLSRC:N*.orig}; do \
 		echo $$i; \
 	done|sort|xargs -n 1024 cat >$(.TARGET)
+	cat $(.CURDIR)/magdir/* >post-magic
 
 magic: $(MAG1) post-magic
-	cat ${MAG1} post-magic >$(.TARGET)
+#	cat ${MAG1} post-magic >$(.TARGET)
+	cat ${MAG1} post-magic >magic
 
 afterinstall:
 	${INSTALL} ${INSTALL_COPY} -o $(MAGICOWN) -g $(MAGICGRP) \

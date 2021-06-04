@@ -1,4 +1,4 @@
-/*	$OpenBSD: mknod.c,v 1.30 2016/10/20 10:24:40 schwarze Exp $	*/
+/*	$OpenBSD: mknod.c,v 1.31 2019/06/28 13:32:44 deraadt Exp $	*/
 /*	$NetBSD: mknod.c,v 1.8 1995/08/11 00:08:18 jtc Exp $	*/
 
 /*
@@ -25,14 +25,12 @@
 #include <err.h>
 #include <errno.h>
 #include <limits.h>
-#include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 
 extern char *__progname;
-extern int optreset;
 
 struct node {
 	const char *name;
@@ -55,8 +53,6 @@ main(int argc, char *argv[])
 	int mflag = 0;
 	void *set;
 	int ch;
-
-	setlocale(LC_ALL, "");
 
 	if (pledge("stdio dpath", NULL) == -1)
 		err(1, "pledge");
@@ -204,7 +200,7 @@ domakenodes(struct node *node, int n)
 		}
 
 		r = mknod(node[i].name, node[i].mode, node[i].dev);
-		if (r < 0) {
+		if (r == -1) {
 			warn("%s", node[i].name);
 			rv = 1;
 		}

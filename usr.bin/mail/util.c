@@ -1,4 +1,4 @@
-/*	$OpenBSD: aux.c,v 1.29 2015/10/16 17:56:07 mmcc Exp $	*/
+/*	$OpenBSD: util.c,v 1.1 2020/12/15 00:50:01 daniel Exp $	*/
 /*	$NetBSD: aux.c,v 1.5 1997/05/13 06:15:52 mikel Exp $	*/
 
 /*
@@ -32,7 +32,6 @@
 
 #include "rcv.h"
 #include <fcntl.h>
-#include <time.h>
 #include "extern.h"
 
 /*
@@ -46,7 +45,7 @@ static char *save2str(char *, char *);
  * Return a pointer to a dynamic copy of the argument.
  */
 char *
-savestr(char *str)
+savestr(const char *str)
 {
 	char *new;
 	int size = strlen(str) + 1;
@@ -99,7 +98,7 @@ isdir(char *name)
 {
 	struct stat sbuf;
 
-	if (stat(name, &sbuf) < 0)
+	if (stat(name, &sbuf) == -1)
 		return(0);
 	return(S_ISDIR(sbuf.st_mode));
 }

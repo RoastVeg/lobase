@@ -1,4 +1,4 @@
-/*	$OpenBSD: pax.c,v 1.51 2017/12/08 17:04:14 deraadt Exp $	*/
+/*	$OpenBSD: pax.c,v 1.53 2019/06/28 13:34:59 deraadt Exp $	*/
 /*	$NetBSD: pax.c,v 1.5 1996/03/26 23:54:20 mrg Exp $	*/
 
 /*-
@@ -39,13 +39,14 @@
 #include <sys/resource.h>
 #include <signal.h>
 #include <unistd.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 #include <err.h>
 #include <fcntl.h>
+#include <grp.h>
 #include <paths.h>
+#include <pwd.h>
 #include <stdio.h>
 
 #include "pax.h"
@@ -92,7 +93,11 @@ char	*dirptr;		/* destination dir in a copy */
 char	*argv0;			/* root of argv[0] */
 enum op_mode op_mode;		/* what program are we acting as? */
 sigset_t s_mask;		/* signal mask for cleanup critical sect */
-FILE	*listf;		/* file pointer to print file list to */
+#ifdef __OpenBSD__
+FILE	*listf = stderr;	/* file pointer to print file list to */
+#else
+FILE	*listf;
+#endif
 int	listfd = STDERR_FILENO;	/* fd matching listf, for sighandler output */
 char	*tempfile;		/* tempfile to use for mkstemp(3) */
 char	*tempbase;		/* basename of tempfile to use for mkstemp(3) */
@@ -223,13 +228,11 @@ main(int argc, char **argv)
 	char *tmpdir;
 	size_t tdlen;
 
-	listf = stderr;
-
 	/*
 	 * Keep a reference to cwd, so we can always come back home.
 	 */
 	cwdfd = open(".", O_RDONLY | O_CLOEXEC);
-	if (cwdfd < 0) {
+	if (cwdfd == -1) {
 		syswarn(1, errno, "Can't open current working directory.");
 		return(exit_val);
 	}
@@ -251,6 +254,16 @@ main(int argc, char **argv)
 		memcpy(tempfile, tmpdir, tdlen);
 	tempbase = tempfile + tdlen;
 	*tempbase++ = '/';
+
+	/*
+	 * keep passwd and group files open for faster lookups.
+	 */
+#ifdef HAVE_SETPASSENT
+	setpassent(1);
+#endif
+#ifdef HAVE_SETGROUPENT
+	setgroupent(1);
+#endif
 
 	/*
 	 * parse options, determine operational mode, general init
@@ -343,7 +356,7 @@ setup_sig(int sig, const struct sigaction *n_hand)
 {
 	struct sigaction o_hand;
 
-	if (sigaction(sig, NULL, &o_hand) < 0)
+	if (sigaction(sig, NULL, &o_hand) == -1)
 		return (-1);
 
 	if (o_hand.sa_handler == SIG_IGN)
@@ -428,8 +441,8 @@ gen_init(void)
 		goto out;
 
 	n_hand.sa_handler = SIG_IGN;
-	if ((sigaction(SIGPIPE, &n_hand, NULL) < 0) ||
-	    (sigaction(SIGXFSZ, &n_hand, NULL) < 0))
+	if ((sigaction(SIGPIPE, &n_hand, NULL) == -1) ||
+	    (sigaction(SIGXFSZ, &n_hand, NULL) == -1))
 		goto out;
 	return(0);
 

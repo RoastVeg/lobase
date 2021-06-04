@@ -4,5 +4,6 @@
 
 PROG=	indent
 SRCS=	indent.c io.c lexi.c parse.c pr_comment.c args.c
+CFLAGS+= -fno-common
 
 include ${.TOPDIR}/mk/bsd.prog.mk

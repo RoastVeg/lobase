@@ -1,4 +1,4 @@
-/*	$OpenBSD: util.c,v 1.58 2017/12/09 18:38:37 pirofti Exp $	*/
+/*	$OpenBSD: util.c,v 1.63 2020/07/23 20:19:27 martijn Exp $	*/
 
 /*-
  * Copyright (c) 1999 James Howard and Dag-Erling Coïdan Smørgrav
@@ -61,6 +61,12 @@ grep_tree(char **argv)
 	FTS	*fts;
 	FTSENT	*p;
 	int	c, fts_flags;
+	char	*dot_argv[] = { ".", NULL };
+	char	*path;
+
+	/* default to . if no path given */
+	if (argv[0] == NULL)
+		argv = dot_argv;
 
 	c = 0;
 
@@ -77,10 +83,15 @@ grep_tree(char **argv)
 			if(!sflag)
 				warnc(p->fts_errno, "%s", p->fts_path);
 			break;
+		case FTS_D:
 		case FTS_DP:
 			break;
 		default:
-			c += procfile(p->fts_path);
+			path = p->fts_path;
+			/* skip "./" if implied */
+			if (argv == dot_argv && p->fts_pathlen >= 2)
+				path += 2;
+			c |= procfile(path);
 			break;
 		}
 	}
@@ -95,17 +106,20 @@ procfile(char *fn)
 {
 	str_t ln;
 	file_t *f;
-	int c, t, z, nottext;
+	int t, z, nottext, overflow = 0;
+	unsigned long long c;
 
 	mcount = mlimit;
 
 	if (fn == NULL) {
 		fn = "(standard input)";
-		f = grep_fdopen(STDIN_FILENO, "r");
+		f = grep_fdopen(STDIN_FILENO);
 	} else {
-		f = grep_open(fn, "r");
+		f = grep_open(fn);
 	}
 	if (f == NULL) {
+		if (errno == EISDIR)
+			return 0;
 		file_err = 1;
 		if (!sflag)
 			warn("%s", fn);
@@ -119,6 +133,8 @@ procfile(char *fn)
 	}
 
 	ln.file = fn;
+	if (labelname)
+		ln.file = (char *)labelname;
 	ln.line_no = 0;
 	ln.len = 0;
 	linesqueued = 0;
@@ -143,7 +159,10 @@ procfile(char *fn)
 			enqueue(&ln);
 			linesqueued++;
 		}
-		c += t;
+		if (ULLONG_MAX - c < (unsigned long long)t)
+			overflow = 1;
+		else
+			c += t;
 		if (mflag && mcount <= 0)
 			break;
 	}
@@ -154,7 +173,7 @@ procfile(char *fn)
 	if (cflag) {
 		if (!hflag)
 			printf("%s:", ln.file);
-		printf("%u\n", c);
+		printf("%llu%s\n", c, overflow ? "+" : "");
 	}
 	if (lflag && c != 0)
 		printf("%s\n", fn);
@@ -164,7 +183,7 @@ procfile(char *fn)
 	    binbehave == BIN_FILE_BIN && nottext && !qflag)
 		printf("Binary file %s matches\n", fn);
 
-	return c;
+	return overflow || c != 0;
 }
 
 
@@ -648,7 +667,8 @@ printline(str_t *line, int sep, regmatch_t *pmatch)
 	if (bflag) {
 		if (n)
 			putchar(sep);
-		printf("%lld", (long long)line->off);
+		printf("%lld", (long long)line->off +
+		    (pmatch ? pmatch->rm_so : 0));
 		++n;
 	}
 	if (n)

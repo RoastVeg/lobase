@@ -30,14 +30,18 @@
  * SUCH DAMAGE.
  */
 
-#include <sys/types.h>
+#ifdef __linux__
 #include <sys/ioctl.h>
+#endif
+#include <sys/types.h>
 
 #include <stddef.h>
 #include <stdio.h>
 #include <string.h>
 #include <termios.h>
+#ifdef __linux__
 #include <unistd.h>
+#endif
 
 #include "stty.h"
 #include "extern.h"

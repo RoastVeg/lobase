@@ -1,4 +1,4 @@
-/ $OpenBSD: units.lib,v 1.107 2018/03/01 07:02:55 jmc Exp $
+/ $OpenBSD: units.lib,v 1.145 2021/05/01 06:02:32 jmc Exp $
 / $NetBSD: units.lib,v 1.3 1996/04/06 06:01:04 thorpej Exp $
 
 / primitive units
@@ -300,51 +300,52 @@ lumen			cd sr
 lux			cd sr/m2
 
 / http://www.federalreserve.gov/releases/h10/current/
-/ as of February 22, 2018
+/ as of April 23, 2021
 $			dollar
-australiadollar		.7827 $
-brazilreal		1|3.2344 $
-canadadollar		1|1.2659 $
-chinayuan		1|6.3329 $
-denmarkkrone		1|6.0541 $
-euro			1.2298 $
-hongkongdollar		1|7.8233 $
-indiarupee		1|64.7100 $
-japanyen		1|106.6400 $
-malaysiaringgit		1|3.9170 $
-mexicopeso		1|18.5585 $
-newzealanddollar	.7291 $
-norwaykrone		1|7.8415 $
-singaporedollar		1|1.3207 $
-southafricarand		1|11.5500 $
-southkoreawon		1|1075.7700 $
-srilankarupee		1|155.1000 $
-swedenkrona		1|8.1611 $
-switzerlandfranc	1|0.9356 $
-taiwandollar		1|29.2700 $
-thailandbaht		1|31.4200 $
-unitedkingdompound	1.3979 $
-venezuelabolivar	1|28927.500 $
+australiadollar		.7739 $
+brazilreal		1|5.5011 $
+canadadollar		1|1.2495 $
+chinayuan		1|6.4945 $
+denmarkkrone		1|6.1609 $
+euro			1.2069 $
+hongkongdollar		1|7.7605 $
+indiarupee		1|74.9700 $
+japanyen		1|107.9400 $
+malaysiaringgit		1|4.1079 $
+mexicopeso		1|19.8520 $
+newzealanddollar	.7179 $
+norwaykrone		1|8.3125 $
+singaporedollar		1|1.3275 $
+southafricarand		1|14.2750 $
+southkoreawon		1|1115.1000 $
+srilankarupee		1|193.0000 $
+swedenkrona		1|8.4030 $
+switzerlandfranc	1|0.9152 $
+taiwandollar		1|28.0900 $
+thailandbaht		1|31.4100 $
+unitedkingdompound	1.3845 $
+venezuelabolivar	1|2500064.0890 $
 
-/ The Economist, February 21, 2018
-argentinapeso		1|19.9 $
-chilepeso		1|595 $
-colombiapeso		1|2874 $
-czechkoruna		1|20.6 $
-egyptpound		1|17.7 $
-hungaryforint		1|254 $
-icelandkrona		1|101 $
-indonesiarupiah		1|13618 $
-israelshekel		1|3.49 $
-pakistanrupee		1|111 $
-perunuevosol		1|3.25 $
-philippinespeso		1|52.1 $
-polandzloty		1|3.38 $
-russiarouble		1|56.6 $
+/ The Economist, April 28, 2021
+/ Hungary, Iceland, Ukraine, Vietnam: no updates available since October 2018
+argentinapeso		1|93.4 $
+chilepeso		1|702 ±
+colombiapeso		1|3707 $
+czechkoruna		1|21.4 $
+egyptpound		1|15.7 $
+hungaryforint		1|276 $
+icelandkrona		1|110 $
+indonesiarupiah		1|14500 $
+israelshekel		1|3.25 $
+pakistanrupee		1|154 $
+perunuevosol		1|3.82 $
+philippinespeso		1|48.5 $
+polandzloty		1|3.79 $
+russiarouble		1|74.8 $
 saudiarabiariyal	1|3.75 $
-turkeylira		1|3.79 $
-ukrainehryvnia		1|27.0 $
-vietnamdong		1|22718 $
+turkeylira		1|8.23 $
+ukrainehryvnia		1|28.1 $
+vietnamdong		1|23349 $
 
 / EMU currencies have constant exchange rate against Euro since 1.1.1999
 austriaschilling	1|13.7603 euro

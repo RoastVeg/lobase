@@ -1,4 +1,4 @@
-/*	$OpenBSD: diff3.c,v 1.41 2016/10/18 21:06:52 millert Exp $	*/
+/*	$OpenBSD: diff3.c,v 1.45 2021/04/13 14:20:24 stsp Exp $	*/
 
 /*
  * Copyright (C) Caldera International Inc.  2001-2002.
@@ -496,7 +496,9 @@ ed_patch_lines(struct rcs_lines *dlines, struct rcs_lines *plines)
 				if (lp == NULL)
 					errx(1, "ed_patch_lines");
 
-				if (!memcmp(lp->l_line, ".", 1))
+				if (lp->l_len == 2 &&
+				    lp->l_line[0] == '.' &&
+				    lp->l_line[1] == '\n')
 					break;
 
 				TAILQ_REMOVE(&(plines->l_lines), lp, l_list);
@@ -836,6 +838,8 @@ duplicate(struct range *r1, struct range *r2)
 		do {
 			c = getc(fp[0]);
 			d = getc(fp[1]);
+			if (c == -1 && d == -1)
+				break;
 			if (c == -1 || d== -1)
 				return (-1);
 			nchar++;
@@ -891,9 +895,16 @@ edscript(int n)
 			diff_output("%da\n=======\n", de[n].old.to -1);
 		(void)fseek(fp[2], (long)de[n].new.from, SEEK_SET);
 		for (k = de[n].new.to-de[n].new.from; k > 0; k-= j) {
+			size_t r;
 			j = k > BUFSIZ ? BUFSIZ : k;
-			if (fread(block, 1, j, fp[2]) != (size_t)j)
-				return (-1);
+			r = fread(block, 1, j, fp[2]);
+			if (r == 0) {
+				if (feof(fp[2]))
+					break;
+				return -1;
+			}
+			if (r != (size_t)j)
+				j = r;
 			block[j] = '\0';
 			diff_output("%s", block);
 		}

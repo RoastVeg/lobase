@@ -1,4 +1,4 @@
-/*	$OpenBSD: main.c,v 1.120 2018/02/10 06:25:16 jsing Exp $	*/
+/*	$OpenBSD: main.c,v 1.137 2021/02/02 21:41:12 jmc Exp $	*/
 /*	$NetBSD: main.c,v 1.24 1997/08/18 10:20:26 lukem Exp $	*/
 
 /*
@@ -81,7 +81,119 @@
 #include "cmds.h"
 #include "ftp_var.h"
 
+int	trace;
+int	hash;
+int	mark;
+int	sendport;
+int	verbose;
+int	connected;
+int	fromatty;
+int	interactive;
+#ifndef SMALL
+int	confirmrest;
+int	debug;
+int	bell;
+char   *altarg;
+#endif /* !SMALL */
+int	doglob;
+int	autologin;
+int	proxy;
+int	proxflag;
+int	gatemode;
+char   *gateserver;
+int	sunique;
+int	runique;
+int	mcase;
+int	ntflag;
+int	mapflag;
+int	preserve;
+int	progress;
+int	code;
+int	crflag;
+char	pasv[BUFSIZ];
+int	passivemode;
+int	activefallback;
+char	ntin[17];
+char	ntout[17];
+char	mapin[PATH_MAX];
+char	mapout[PATH_MAX];
+char	typename[32];
+int	type;
+int	curtype;
+char	structname[32];
+int	stru;
+char	formname[32];
+int	form;
+char	modename[32];
+int	mode;
+char	bytename[32];
+int	bytesize;
+int	anonftp;
+int	dirchange;
+unsigned int retry_connect;
+int	ttywidth;
+int	epsv4;
+int	epsv4bad;
+
+#ifndef SMALL
+int	  editing;
+EditLine *el;
+History  *hist;
+char	 *cursor_pos;
+size_t	  cursor_argc;
+size_t	  cursor_argo;
+int	  resume;
+char	 *srcaddr;
+int  	  timestamp;
+#endif /* !SMALL */
+
+char	 *cookiefile;
+
+off_t	bytes;
+off_t	filesize;
+char   *direction;
+
+char   *hostname;
+int	unix_server;
+int	unix_proxy;
+
+char *ftpport;
+char *httpport;
+#ifndef NOSSL
+char *httpsport;
+#endif /* !SMALL */
+char *httpuseragent;
+char *gateport;
+
+jmp_buf	toplevel;
+
+#ifndef SMALL
+char	line[FTPBUFLEN];
+char	*argbase;
+char	*stringbase;
+char	argbuf[FTPBUFLEN];
+StringList *marg_sl;
+int	margc;
+int	options;
+#endif /* !SMALL */
+
+int	cpend;
+int	mflag;
+
+#ifndef SMALL
+int macnum;
+struct macel macros[16];
+char macbuf[4096];
+#endif /* !SMALL */
+
+FILE	*ttyout;
+
 int connect_timeout;
+
+#ifndef SMALL
+/* enable using server timestamps by default */
+int server_timestamps = 1;
+#endif
 
 #ifndef NOSSL
 char * const ssl_verify_opts[] = {
@@ -103,6 +215,8 @@ char * const ssl_verify_opts[] = {
 	"noverifytime",
 #define SSL_SESSION		8
 	"session",
+#define SSL_PROTOCOLS		9
+	"protocols",
 	NULL
 };
 
@@ -113,8 +227,9 @@ static void
 process_ssl_options(char *cp)
 {
 	const char *errstr;
-	long long depth;
 	char *str;
+	int depth;
+	uint32_t protocols;
 
 	while (*cp) {
 		switch (getsubopt(&cp, ssl_verify_opts, &str)) {
@@ -153,7 +268,7 @@ process_ssl_options(char *cp)
 			if (errstr)
 				errx(1, "certificate validation depth is %s",
 				    errstr);
-			tls_config_set_verify_depth(tls_config, (int)depth);
+			tls_config_set_verify_depth(tls_config, depth);
 			break;
 		case SSL_MUSTSTAPLE:
 			tls_config_ocsp_require_stapling(tls_config);
@@ -171,6 +286,15 @@ process_ssl_options(char *cp)
 			if (tls_config_set_session_fd(tls_config,
 			    tls_session_fd) == -1)
 				errx(1, "failed to set session: %s",
+				    tls_config_error(tls_config));
+			break;
+		case SSL_PROTOCOLS:
+			if (str == NULL)
+				errx(1, "missing protocol name");
+			if (tls_config_parse_protocols(&protocols, str) != 0)
+				errx(1, "failed to parse TLS protocols");
+			if (tls_config_set_protocols(tls_config, protocols) != 0)
+				errx(1, "failed to set TLS protocols: %s",
 				    tls_config_error(tls_config));
 			break;
 		default:
@@ -223,6 +347,7 @@ main(volatile int argc, char *argv[])
 	el = NULL;
 	hist = NULL;
 	resume = 0;
+	timestamp = 0;
 	srcaddr = NULL;
 	marg_sl = sl_init();
 #endif /* !SMALL */
@@ -297,7 +422,7 @@ main(volatile int argc, char *argv[])
 	httpuseragent = NULL;
 
 	while ((ch = getopt(argc, argv,
-		    "46AaCc:dD:Eegik:Mmno:pP:r:S:s:tU:vVw:")) != -1) {
+		    "46AaCc:dD:EeN:gik:Mmno:pP:r:S:s:TtU:uvVw:")) != -1) {
 		switch (ch) {
 		case '4':
 			family = PF_INET;
@@ -310,6 +435,9 @@ main(volatile int argc, char *argv[])
 			passivemode = 0;
 			break;
 
+		case 'N':
+			setprogname(optarg);
+			break;
 		case 'a':
 			anonftp = 1;
 			break;
@@ -416,6 +544,11 @@ main(volatile int argc, char *argv[])
 #endif /* !SMALL */
 			break;
 
+#ifndef SMALL
+		case 'T':
+			timestamp = 1;
+			break;
+#endif /* !SMALL */
 		case 't':
 			trace = 1;
 			break;
@@ -429,6 +562,9 @@ main(volatile int argc, char *argv[])
 			    optarg) == -1)
 				errx(1, "Can't allocate memory for HTTP(S) "
 				    "User-Agent");
+			break;
+		case 'u':
+			server_timestamps = 0;
 			break;
 #endif /* !SMALL */
 
@@ -942,26 +1078,26 @@ usage(void)
 #ifndef SMALL
 	    "ftp [-46AadEegiMmnptVv] [-D title] [-k seconds] [-P port] "
 	    "[-r seconds]\n"
-	    "           [-s srcaddr] [host [port]]\n"
-	    "       ftp [-C] [-o output] [-s srcaddr]\n"
+	    "           [-s sourceaddr] [host [port]]\n"
+	    "       ftp [-C] [-N name] [-o output] [-s sourceaddr]\n"
 	    "           ftp://[user:password@]host[:port]/file[/] ...\n"
-	    "       ftp [-C] [-c cookie] [-o output] [-S ssl_options] "
-	    "[-s srcaddr]\n"
+	    "       ftp [-CTu] [-c cookie] [-N name] [-o output] [-S ssl_options] "
+	    "[-s sourceaddr]\n"
 	    "           [-U useragent] [-w seconds] "
 	    "http[s]://[user:password@]host[:port]/file ...\n"
-	    "       ftp [-C] [-o output] [-s srcaddr] file:file ...\n"
-	    "       ftp [-C] [-o output] [-s srcaddr] host:/file[/] ...\n"
+	    "       ftp [-C] [-N name] [-o output] [-s sourceaddr] file:file ...\n"
+	    "       ftp [-C] [-N name] [-o output] [-s sourceaddr] host:/file[/] ...\n"
 #else /* !SMALL */
-	    "ftp [-o output] "
+	    "ftp [-N name] [-o output] "
 	    "ftp://[user:password@]host[:port]/file[/] ...\n"
 #ifndef NOSSL
-	    "       ftp [-o output] [-S ssl_options] [-w seconds] "
+	    "       ftp [-N name] [-o output] [-S ssl_options] [-w seconds] "
 	    "http[s]://[user:password@]host[:port]/file ...\n"
 #else
-	    "       ftp [-o output] [-w seconds] http://host[:port]/file ...\n"
+	    "       ftp [-N name] [-o output] [-w seconds] http://host[:port]/file ...\n"
 #endif /* NOSSL */
-	    "       ftp [-o output] file:file ...\n"
-	    "       ftp [-o output] host:/file[/] ...\n"
+	    "       ftp [-N name] [-o output] file:file ...\n"
+	    "       ftp [-N name] [-o output] host:/file[/] ...\n"
 #endif /* !SMALL */
 	    );
 	exit(1);

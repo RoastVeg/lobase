@@ -32,7 +32,6 @@
 
 #include <sys/types.h>
 #include <sys/ioctl.h>
-#include <sys/ttydefaults.h>
 
 #include <err.h>
 #include <limits.h>
@@ -40,7 +39,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <termios.h>
+#ifndef _POSIX_VDISABLE
 #include <unistd.h>
+#endif
 
 #include "stty.h"
 #include "extern.h"

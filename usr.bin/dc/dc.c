@@ -28,7 +28,6 @@
 static __dead void	usage(void);
 
 extern char		*__progname;
-extern int optreset;
 
 static __dead void
 usage(void)
@@ -50,12 +49,8 @@ dc_main(int argc, char *argv[])
 
 	buf = bstrdup("");
 	/* accept and ignore a single dash to be 4.4BSD dc(1) compatible */
-#ifdef __GLIBC__
-	optind = 0;
-#else
 	optind = 1;
 	optreset = 1;
-#endif
 	while ((ch = getopt(argc, argv, "e:x-")) != -1) {
 		switch (ch) {
 		case 'e':

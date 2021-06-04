@@ -65,8 +65,8 @@ Dependencies
 - libevent (cu)
 - libressl
   - libcrypto (bc,dc)
-- ncurses (bc,ul)
-- zlib (grep)
+- ncurses (bc,ksh,ul)
+- zlib (grep,compress)
 
 Debian:
 
@@ -224,6 +224,7 @@ pkg-config
 pr
 printenv
 printf
+rcs
 readlink
 renice
 rev
@@ -262,6 +263,7 @@ vis
 wc
 what
 which
+who
 whois
 xargs
 xinstall        Does not support file flags (-f)

@@ -1,7 +1,7 @@
-/*	$OpenBSD: newsyslog.c,v 1.108 2017/07/24 12:57:01 jca Exp $	*/
+/*	$OpenBSD: newsyslog.c,v 1.112 2019/06/28 13:35:02 deraadt Exp $	*/
 
 /*
- * Copyright (c) 1999, 2002, 2003 Todd C. Miller <Todd.Miller@courtesan.com>
+ * Copyright (c) 1999, 2002, 2003 Todd C. Miller <millert@openbsd.org>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -70,7 +70,6 @@
  *              keeping the specified number of backup files around.
  *
  */
-
 
 #define CONF "/etc/newsyslog.conf"
 #define PIDFILE "/var/run/syslog.pid"
@@ -191,6 +190,14 @@ main(int argc, char **argv)
 
 	TAILQ_INIT(&config);
 	TAILQ_INIT(&runlist);
+
+	/* Keep passwd and group files open for faster lookups. */
+#ifdef HAVE_SETPASSENT
+	setpassent(1);
+#endif
+#ifdef HAVE_SETGROUPENT
+	setgroupent(1);
+#endif
 
 	ret = parse_file(&config, &listlen);
 	if (argc == 0)
@@ -469,8 +476,6 @@ parse_file(struct entrylist *list, int *nentries)
 {
 	char line[BUFSIZ], *parse, *q, *errline, *group, *tmp, *ep;
 	struct conf_entry *working;
-	struct passwd *pwd;
-	struct group *grp;
 	struct stat sb;
 	int lineno = 0;
 	int ret = 0;
@@ -511,36 +516,28 @@ nextline:
 		if ((group = strchr(q, ':')) != NULL ||
 		    (group = strrchr(q, '.')) != NULL)  {
 			*group++ = '\0';
-			if (*q) {
-				if (!(isnumberstr(q))) {
-					if ((pwd = getpwnam(q)) == NULL) {
-						warnx("%s:%d: unknown user"
-						    " %s --> skipping",
-						    conf, lineno, q);
-						ret = 1;
-						goto nextline;
-					}
-					working->uid = pwd->pw_uid;
-				} else
-					working->uid = atoi(q);
-			} else
+			if (*q == '\0') {
 				working->uid = (uid_t)-1;
+			} else if (isnumberstr(q)) {
+				working->uid = atoi(q);
+			} else if (uid_from_user(q, &working->uid) == -1) {
+				warnx("%s:%d: unknown user %s --> skipping",
+				    conf, lineno, q);
+				ret = 1;
+				goto nextline;
+			}
 
 			q = group;
-			if (*q) {
-				if (!(isnumberstr(q))) {
-					if ((grp = getgrnam(q)) == NULL) {
-						warnx("%s:%d: unknown group"
-						    " %s --> skipping",
-						    conf, lineno, q);
-						ret = 1;
-						goto nextline;
-					}
-					working->gid = grp->gr_gid;
-				} else
-					working->gid = atoi(q);
-			} else
+			if (*q == '\0') {
 				working->gid = (gid_t)-1;
+			} else if (isnumberstr(q)) {
+				working->gid = atoi(q);
+			} else if (gid_from_group(q, &working->gid) == -1) {
+				warnx("%s:%d: unknown group %s --> skipping",
+				    conf, lineno, q);
+				ret = 1;
+				goto nextline;
+			}
 
 			q = parse = missing_field(sob(++parse), errline, lineno);
 			*(parse = son(parse)) = '\0';
@@ -857,7 +854,7 @@ dotrim(struct conf_entry *ent)
 	if (noaction)  {
 		printf("\tmktemp %s\n", file2);
 	} else {
-		if ((fd = mkstemp(file2)) < 0)
+		if ((fd = mkstemp(file2)) == -1)
 			err(1, "can't start '%s' log", file2);
 		if (fchmod(fd, ent->permissions))
 			err(1, "can't chmod '%s' log file", file2);
@@ -929,7 +926,7 @@ compress_log(struct conf_entry *ent)
 		return;
 	}
 	pid = fork();
-	if (pid < 0) {
+	if (pid == -1) {
 		err(1, "fork");
 	} else if (pid == 0) {
 		(void)execl(COMPRESS, base, "-f", tmp, (char *)NULL);
@@ -963,10 +960,10 @@ age_old_log(struct conf_entry *ent)
 		(void)snprintf(file, sizeof(file), "%s.0", ent->log);
 	if (ent->flags & CE_COMPACT) {
 		if (stat_suffix(file, sizeof(file), COMPRESS_POSTFIX, &sb,
-		    stat) < 0 && stat(file, &sb) < 0)
+		    stat) < 0 && stat(file, &sb) == -1)
 			return (-1);
 	} else {
-		if (stat(file, &sb) < 0 && stat_suffix(file, sizeof(file),
+		if (stat(file, &sb) == -1 && stat_suffix(file, sizeof(file),
 		    COMPRESS_POSTFIX, &sb, stat) < 0)
 			return (-1);
 	}
@@ -1013,7 +1010,7 @@ domonitor(struct conf_entry *ent)
 	FILE *fp;
 	int rd;
 
-	if (stat(ent->log, &sb) < 0)
+	if (stat(ent->log, &sb) == -1)
 		return (0);
 
 	if (noaction) {
@@ -1034,7 +1031,7 @@ domonitor(struct conf_entry *ent)
 	    STATS_DIR, flog);
 
 	/* ..if it doesn't exist, simply record the current size. */
-	if ((sb.st_size == 0) || stat(fname, &tsb) < 0)
+	if ((sb.st_size == 0) || stat(fname, &tsb) == -1)
 		goto update;
 
 	fp = fopen(fname, "r");

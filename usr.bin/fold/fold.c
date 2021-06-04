@@ -33,7 +33,6 @@
  * SUCH DAMAGE.
  */
 
-
 #include <ctype.h>
 #include <err.h>
 #include <limits.h>

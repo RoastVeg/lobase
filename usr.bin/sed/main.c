@@ -1,4 +1,4 @@
-/*	$OpenBSD: main.c,v 1.36 2017/12/13 16:06:34 millert Exp $	*/
+/*	$OpenBSD: main.c,v 1.42 2021/01/31 14:23:05 naddy Exp $	*/
 
 /*-
  * Copyright (c) 1992 Diomidis Spinellis.
@@ -160,6 +160,10 @@ main(int argc, char *argv[])
 		termwidth = win.ws_col;
 	if (termwidth == 0)
 		termwidth = 80;
+	if (termwidth <= 8)
+		termwidth = 1;
+	else
+		termwidth -= 8;
 
 	if (inplace != NULL) {
 		if (pledge("stdio rpath wpath cpath fattr chown", NULL) == -1)
@@ -248,15 +252,9 @@ again:
 			goto again;
 		}
 	case ST_FILE:
-		if ((p = fgetln(f, &len)) != NULL) {
+		if (getline(outbuf, outsize, f) != -1) {
+			p = *outbuf;
 			linenum++;
-			if (len >= *outsize) {
-				free(*outbuf);
-				*outsize = ROUNDLEN(len + 1);
-				*outbuf = xmalloc(*outsize);
-			}
-			memcpy(*outbuf, p, len);
-			(*outbuf)[len] = '\0';
 			if (linenum == 1 && p[0] == '#' && p[1] == 'n')
 				nflag = 1;
 			return (*outbuf);
@@ -306,6 +304,30 @@ again:
 	return (NULL);
 }
 
+void
+finish_file(void)
+{
+	if (infile != NULL) {
+		fclose(infile);
+		if (*oldfname != '\0') {
+			if (rename(fname, oldfname) != 0) {
+				warning("rename()");
+				unlink(tmpfname);
+				exit(1);
+			}
+			*oldfname = '\0';
+		}
+		if (*tmpfname != '\0') {
+			if (outfile != NULL && outfile != stdout)
+				fclose(outfile);
+			outfile = NULL;
+			rename(tmpfname, fname);
+			*tmpfname = '\0';
+		}
+		outfname = NULL;
+	}
+}
+
 /*
  * Like fgets, but go through the list of files chaining them together.
  * Set len to the length of the line.
@@ -315,7 +337,9 @@ mf_fgets(SPACE *sp, enum e_spflag spflag)
 {
 	struct stat sb;
 	size_t len;
-	char *p;
+	char dirbuf[PATH_MAX];
+	static char *p;
+	static size_t psize;
 	int c, fd;
 	static int firstfile;
 
@@ -343,25 +367,7 @@ mf_fgets(SPACE *sp, enum e_spflag spflag)
 			sp->len = 0;
 			return (0);
 		}
-		if (infile != NULL) {
-			fclose(infile);
-			if (*oldfname != '\0') {
-				if (rename(fname, oldfname) != 0) {
-					warning("rename()");
-					unlink(tmpfname);
-					exit(1);
-				}
-				*oldfname = '\0';
-			}
-			if (*tmpfname != '\0') {
-				if (outfile != NULL && outfile != stdout)
-					fclose(outfile);
-				outfile = NULL;
-				rename(tmpfname, fname);
-				*tmpfname = '\0';
-			}
-			outfname = NULL;
-		}
+		finish_file();
 		if (firstfile == 0)
 			files = files->next;
 		else
@@ -387,8 +393,9 @@ mf_fgets(SPACE *sp, enum e_spflag spflag)
 				if (len > sizeof(oldfname))
 					error(FATAL, "%s: name too long", fname);
 			}
-			len = snprintf(tmpfname, sizeof(tmpfname), "%s/sedXXXXXXXXXX",
-			    dirname(fname));
+			strlcpy(dirbuf, fname, sizeof(dirbuf));
+			len = snprintf(tmpfname, sizeof(tmpfname),
+			    "%s/sedXXXXXXXXXX", dirname(dirbuf));
 			if (len >= sizeof(tmpfname))
 				error(FATAL, "%s: name too long", fname);
 			if ((fd = mkstemp(tmpfname)) == -1)
@@ -401,7 +408,7 @@ mf_fgets(SPACE *sp, enum e_spflag spflag)
 			fchmod(fileno(outfile), sb.st_mode & ALLPERMS);
 			outfname = tmpfname;
 			linenum = 0;
-			resetranges();
+			resetstate();
 		} else {
 			outfile = stdout;
 			outfname = "stdout";
@@ -417,13 +424,13 @@ mf_fgets(SPACE *sp, enum e_spflag spflag)
 	 * We are here only when infile is open and we still have something
 	 * to read from it.
 	 *
-	 * Use fgetln so that we can handle essentially infinite input data.
-	 * Can't use the pointer into the stdio buffer as the process space
-	 * because the ungetc() can cause it to move.
+	 * Use getline() so that we can handle essentially infinite input
+	 * data.  The p and psize are static so each invocation gives
+	 * getline() the same buffer which is expanded as needed.
 	 */
-	p = fgetln(infile, &len);
-	if (ferror(infile))
-		error(FATAL, "%s: %s", fname, strerror(errno ? errno : EIO));
+	len = getline(&p, &psize, infile);
+	if ((ssize_t)len == -1)
+		error(FATAL, "%s: %s", fname, strerror(errno));
 	if (len != 0 && p[len - 1] == '\n') {
 		sp->append_newline = 1;
 		len--;

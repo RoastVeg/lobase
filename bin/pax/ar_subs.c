@@ -1,4 +1,4 @@
-/*	$OpenBSD: ar_subs.c,v 1.48 2016/08/26 05:06:14 guenther Exp $	*/
+/*	$OpenBSD: ar_subs.c,v 1.49 2019/06/28 13:34:59 deraadt Exp $	*/
 /*	$NetBSD: ar_subs.c,v 1.5 1995/03/21 09:07:06 cgd Exp $	*/
 
 /*-
@@ -34,7 +34,9 @@
  * SUCH DAMAGE.
  */
 
+#ifdef __linux__
 #include <sys/time.h>
+#endif
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <errno.h>
@@ -774,7 +776,7 @@ copy(void)
 	}
 	drem = PAXPATHLEN - dlen;
 
-	if (stat(dirptr, &sb) < 0) {
+	if (stat(dirptr, &sb) == -1) {
 		syswarn(1, errno, "Cannot access destination directory %s",
 			dirptr);
 		return;

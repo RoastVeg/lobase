@@ -19,6 +19,9 @@
 #include <sys/types.h>
 
 #include <stdio.h>
+#ifdef __linux__
+#include <stdint.h>
+#endif
 
 #include "magic.h"
 

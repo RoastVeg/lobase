@@ -1,4 +1,4 @@
-/*	$OpenBSD: diff3prog.c,v 1.19 2016/10/18 21:06:52 millert Exp $	*/
+/*	$OpenBSD: diff3prog.c,v 1.21 2021/04/13 14:20:23 stsp Exp $	*/
 
 /*
  * Copyright (C) Caldera International Inc.  2001-2002.
@@ -494,6 +494,8 @@ duplicate(struct range *r1, struct range *r2)
 		do {
 			c = getc(fp[0]);
 			d = getc(fp[1]);
+			if (c == -1 && d == -1)
+				break;
 			if (c == -1 || d== -1)
 				trouble();
 			nchar++;
@@ -555,9 +557,16 @@ edscript(int n)
 			printf("%da\n=======\n", de[n].old.to -1);
 		(void)fseek(fp[2], (long)de[n].new.from, SEEK_SET);
 		for (k = de[n].new.to-de[n].new.from; k > 0; k-= j) {
+			size_t r;
 			j = k > BUFSIZ ? BUFSIZ : k;
-			if (fread(block, 1, j, fp[2]) != j)
+			r = fread(block, 1, j, fp[2]);
+			if (r == 0) {
+				if (feof(fp[2]))
+					break;
 				trouble();
+			}
+			if (r != j)
+				j = r;
 			(void)fwrite(block, 1, j, stdout);
 		}
 		if (!oflag || !overlap[n])

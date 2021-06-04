@@ -183,9 +183,7 @@ main(int argc, char *argv[])
 __dead void
 usage(void)
 {
-	extern char *__progname;
-
-	(void)fprintf(stderr, "usage: %s [-lp] utility [argument ...]\n",
-	    __progname);
+	fprintf(stderr, "usage: %s [-lp] utility [argument ...]\n",
+	    getprogname());
 	exit(1);
 }

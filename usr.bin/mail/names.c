@@ -1,4 +1,4 @@
-/*	$OpenBSD: names.c,v 1.23 2015/10/16 17:56:07 mmcc Exp $	*/
+/*	$OpenBSD: names.c,v 1.25 2019/06/28 13:35:02 deraadt Exp $	*/
 /*	$NetBSD: names.c,v 1.5 1996/06/08 19:48:32 christos Exp $	*/
 
 /*
@@ -245,7 +245,7 @@ outof(struct name *names, FILE *fo, struct header *hp)
 			}
 			image = open(tempname, O_RDWR | O_CLOEXEC);
 			(void)rm(tempname);
-			if (image < 0) {
+			if (image == -1) {
 				warn("%s", tempname);
 				senderr++;
 				(void)Fclose(fout);
@@ -299,7 +299,7 @@ outof(struct name *names, FILE *fo, struct header *hp)
 				senderr++;
 				goto cant;
 			}
-			if ((f = dup(image)) < 0) {
+			if ((f = dup(image)) == -1) {
 				warn("dup");
 				fin = NULL;
 			} else
@@ -582,7 +582,7 @@ count(struct name *np)
  * Delete the given name from a namelist.
  */
 struct name *
-delname(struct name *np, char *name)
+delname(struct name *np, const char *name)
 {
 	struct name *p;
 

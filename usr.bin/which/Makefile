@@ -14,7 +14,7 @@ check_path_in_man:
 	sed -n 's/^[    ]*"\(.*\)".*/.D1 \1/p'` ; \
 	fgrep -xq "$$stdpath" ${.CURDIR}/whereis.1 && { touch $@; exit 0; }; \
 	echo "Update the expansion of _PATH_STDPATH in ${.CURDIR}/whereis.1"; \
-	exit 0
+	exit 1
 
 all: check_path_in_man
 CLEANFILES = check_path_in_man

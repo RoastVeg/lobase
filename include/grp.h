@@ -1,4 +1,4 @@
-/*	$OpenBSD: grp.h,v 1.12 2014/08/31 04:04:38 guenther Exp $	*/
+/*	$OpenBSD: grp.h,v 1.13 2018/09/13 04:04:38 millert Exp $	*/
 /*	$NetBSD: grp.h,v 1.7 1995/04/29 05:30:40 cgd Exp $	*/
 
 /*-
@@ -42,7 +42,8 @@
 
 #include <sys/types.h>
 
-char		*group_from_gid(gid_t, int);
+int			gid_from_group(const char *, gid_t *);
+const char		*group_from_gid(gid_t, int);
 
 #endif /* !_COMPAT_GRP_H_ */
 

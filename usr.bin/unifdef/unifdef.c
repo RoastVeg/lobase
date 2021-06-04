@@ -55,7 +55,8 @@
 #include <unistd.h>
 
 static const char copyright[] =
-    #include "version.h"
+    "@(#) $Version: unifdef-2.10 $\n"
+    "@(#) $Date: 2014/04/18 21:11:34 $\n"
     "@(#) $Author: deraadt $\n"
     "@(#) $URL: http://dotat.at/prog/unifdef $\n"
 ;
@@ -410,7 +411,7 @@ processinout(const char *ifn, const char *ofn)
 		process();
 		return;
 	}
-	if (stat(ofn, &st) < 0) {
+	if (stat(ofn, &st) == -1) {
 		output = fopen(ofn, "wb");
 		if (output == NULL)
 			err(2, "can't create %s", ofn);
@@ -427,11 +428,11 @@ processinout(const char *ifn, const char *ofn)
 
 	if (backext != NULL && *backext != '\0') {
 		char *backname = astrcat(ofn, backext);
-		if (rename(ofn, backname) < 0)
+		if (rename(ofn, backname) == -1)
 			err(2, "can't rename \"%s\" to \"%s\"", ofn, backname);
 		free(backname);
 	}
-	if (rename(tempname, ofn) < 0)
+	if (rename(tempname, ofn) == -1)
 		err(2, "can't rename \"%s\" to \"%s\"", tempname, ofn);
 	free(tempname);
 	tempname = NULL;
@@ -1531,7 +1532,7 @@ astrcat(const char *s1, const char *s2)
 {
 	char *s;
 
-	if (asprintf(&s, "%s%s", s1, s2) < 0)
+	if (asprintf(&s, "%s%s", s1, s2) == -1)
 		err(2, "asprintf");
 	return (s);
 }
@@ -1585,7 +1586,7 @@ static FILE *
 mktempmode(char *tmp, int mode)
 {
 	int fd = mkstemp(tmp);
-	if (fd < 0)
+	if (fd == -1)
 		return (NULL);
 	fchmod(fd, mode & (S_IRWXU|S_IRWXG|S_IRWXO));
 	return (fdopen(fd, "wb"));

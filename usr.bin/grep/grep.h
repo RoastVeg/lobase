@@ -1,4 +1,4 @@
-/*	$OpenBSD: grep.h,v 1.25 2017/12/09 18:38:37 pirofti Exp $	*/
+/*	$OpenBSD: grep.h,v 1.28 2021/03/10 21:55:22 millert Exp $	*/
 
 /*-
  * Copyright (c) 1999 James Howard and Dag-Erling Coïdan Smørgrav
@@ -27,6 +27,7 @@
  */
 
 #include <sys/types.h>
+#include <sys/stat.h>
 
 #include <limits.h>
 #include <regex.h>
@@ -69,6 +70,7 @@ extern int	 Aflag, Bflag, Eflag, Fflag, Hflag, Lflag,
 		 bflag, cflag, hflag, iflag, lflag, mflag, nflag, oflag, qflag,
 		 sflag, vflag, wflag, xflag;
 extern int	 binbehave;
+extern const char *labelname;
 
 extern int	 first, matchall, patterns, tail, file_err;
 extern char    **pattern;
@@ -106,7 +108,7 @@ typedef struct mmfile {
 	char	*base, *end, *ptr;
 } mmf_t;
 
-mmf_t		*mmopen(char *fn, char *mode);
+mmf_t		*mmopen(int fd, struct stat *sb);
 void		 mmclose(mmf_t *mmf);
 char		*mmfgetln(mmf_t *mmf, size_t *l);
 
@@ -114,8 +116,8 @@ char		*mmfgetln(mmf_t *mmf, size_t *l);
 struct file;
 typedef struct file file_t;
 
-file_t		*grep_fdopen(int fd, char *mode);
-file_t		*grep_open(char *path, char *mode);
+file_t		*grep_fdopen(int fd);
+file_t		*grep_open(char *path);
 int		 grep_bin_file(file_t *f);
 char		*grep_fgetln(file_t *f, size_t *l);
 void		 grep_close(file_t *f);

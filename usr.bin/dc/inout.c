@@ -341,7 +341,7 @@ printnumber(FILE *f, const struct number *b, u_int base)
 		mult = BN_new();
 		stop = BN_new();
 		if (mult == NULL || stop == NULL)
-			err(1, NULL);
+		  err(1, NULL);
 		bn_check(BN_one(mult));
 		bn_check(BN_one(stop));
 		scale_number(stop, (int)b->scale);

@@ -1,4 +1,4 @@
-/*	$OpenBSD: util.c,v 1.86 2017/12/23 20:04:23 cheloha Exp $	*/
+/*	$OpenBSD: util.c,v 1.95 2021/02/02 12:58:42 robert Exp $	*/
 /*	$NetBSD: util.c,v 1.12 1997/08/18 10:20:27 lukem Exp $	*/
 
 /*-
@@ -282,8 +282,7 @@ tryagain:
 			tmp[strcspn(tmp, "\n")] = '\0';
 			if (tmp[0] != '\0')
 				user = tmp;
-		}
-		else
+		} else
 			exit(0);
 	}
 	n = command("USER %s", user);
@@ -404,7 +403,7 @@ remglob2(char *argv[], int doswitch, char **errbuf, FILE **ftemp, char *type)
 		if (temp[len-1] != '/')
 			temp[len++] = '/';
 		(void)strlcpy(&temp[len], TMPFILE, sizeof temp - len);
-		if ((fd = mkstemp(temp)) < 0) {
+		if ((fd = mkstemp(temp)) == -1) {
 			warn("unable to create temporary file: %s", temp);
 			return (NULL);
 		}
@@ -764,7 +763,7 @@ progressmeter(int flag, const char *filename)
 	off_t cursize, abbrevsize;
 	double elapsed;
 	int ratio, barlength, i, remaining, overhead = 30;
-	char buf[512];
+	char buf[512], *filenamebuf;
 
 	if (flag == -1) {
 		clock_gettime(CLOCK_MONOTONIC, &start);
@@ -783,11 +782,12 @@ progressmeter(int flag, const char *filename)
 	ratio = MAXIMUM(ratio, 0);
 	ratio = MINIMUM(ratio, 100);
 	if (!verbose && flag == -1) {
-		filename = basename(filename);
-		if (filename != NULL) {
+		if ((filenamebuf = strdup(filename)) != NULL &&
+		    (filename = basename(filenamebuf)) != NULL) {
 			free(title);
 			title = strdup(filename);
 		}
+		free(filenamebuf);
 	}
 
 	buf[0] = 0;
@@ -922,7 +922,7 @@ void
 ptransfer(int siginfo)
 {
 	struct timespec now, td;
-	double elapsed;
+	double elapsed, pace;
 	off_t bs;
 	int meg, remaining, hh;
 	char buf[100];
@@ -938,11 +938,13 @@ ptransfer(int siginfo)
 	if (bs > (1024 * 1024))
 		meg = 1;
 
-	/* XXX floating point printf in signal handler */
+	pace = bs / (1024.0 * (meg ? 1024.0 : 1.0));
 	(void)snprintf(buf, sizeof(buf),
-	    "%lld byte%s %s in %.2f seconds (%.2f %sB/s)\n",
-	    (long long)bytes, bytes == 1 ? "" : "s", direction, elapsed,
-	    bs / (1024.0 * (meg ? 1024.0 : 1.0)), meg ? "M" : "K");
+	    "%lld byte%s %s in %lld.%02d seconds (%lld.%02d %sB/s)\n",
+	    (long long)bytes, bytes == 1 ? "" : "s", direction,
+	    (long long)elapsed, (int)(elapsed * 100.0) % 100,
+	    (long long)pace, (int)(pace * 100.0) % 100,
+	    meg ? "M" : "K");
 
 	if (siginfo && bytes > 0 && elapsed > 0.0 && filesize >= 0 &&
 	    bytes + restart_point <= filesize) {
@@ -1089,7 +1091,7 @@ connect_wait(int s)
 
 	if (poll(pfd, 1, -1) == -1)
 		return -1;
-	if (getsockopt(s, SOL_SOCKET, SO_ERROR, &error, &len) < 0)
+	if (getsockopt(s, SOL_SOCKET, SO_ERROR, &error, &len) == -1)
 		return -1;
 	if (error != 0) {
 		errno = error;
@@ -1097,3 +1099,17 @@ connect_wait(int s)
 	}
 	return 0;
 }
+
+#ifndef SMALL
+ssize_t
+http_time(time_t t, char *tmbuf, size_t len)
+{
+	struct tm tm;
+ 
+	/* New HTTP/1.1 RFC 7231 prefers IMF-fixdate from RFC 5322 */
+	if (gmtime_r(&t, &tm) == NULL)
+		return 0;
+	else
+		return (strftime(tmbuf, len, "%a, %d %h %Y %T %Z", &tm));
+}
+#endif /* !SMALL */

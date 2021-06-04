@@ -4,9 +4,6 @@
  * lexical analysis and source input
  */
 
-
-#include <sys/time.h>
-
 #include <ctype.h>
 #include <errno.h>
 #include <libgen.h>

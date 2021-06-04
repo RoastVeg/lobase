@@ -1,4 +1,4 @@
-/*	$OpenBSD: cap_mkdb.c,v 1.22 2015/12/04 19:15:54 jmc Exp $	*/
+/*	$OpenBSD: cap_mkdb.c,v 1.25 2020/09/15 07:41:38 kevlo Exp $	*/
 /*	$NetBSD: cap_mkdb.c,v 1.5 1995/09/02 05:47:12 jtc Exp $	*/
 
 /*-
@@ -49,8 +49,6 @@
 void	 db_build(char **);
 void	 dounlink(void);
 void	 usage(void);
-int	 igetnext(char **, char **);
-int	 main(int, char *[]);
 
 DB *capdbp;
 int verbose;
@@ -111,7 +109,7 @@ main(int argc, char *argv[])
 	    DEFFILEMODE, DB_HASH, &openinfo)) == NULL)
 		err(1, "%s", buf);
 
-	if (atexit(dounlink))
+	if (atexit(dounlink) != 0)
 		err(1, "atexit");
 
 	db_build(argv);

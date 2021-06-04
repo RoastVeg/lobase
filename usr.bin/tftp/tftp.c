@@ -36,7 +36,6 @@
  * This version includes many modifications by Jim Guyton <guyton@rand-unix>
  */
 
-
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/time.h>

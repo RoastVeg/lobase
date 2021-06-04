@@ -1,4 +1,4 @@
-/*	$OpenBSD: main.c,v 1.94 2016/09/03 13:26:50 tedu Exp $	*/
+/*	$OpenBSD: main.c,v 1.98 2021/01/18 00:46:58 mortimer Exp $	*/
 
 /*
  * Copyright (c) 1992, 1993
@@ -49,6 +49,8 @@
 #include "compress.h"
 
 #define min(a,b) ((a) < (b)? (a) : (b))
+
+enum program_mode pmode;
 
 int cat, decomp, pipin, force, verbose, testmode, list, recurse, storename;
 extern char *__progname;
@@ -481,6 +483,7 @@ docompress(const char *in, char *out, const struct compressor *method,
 {
 #ifndef SMALL
 	u_char buf[Z_BUFSIZE];
+	char namebuf[PATH_MAX];
 	char *name;
 	int error, ifd, ofd, oreg;
 	void *cookie;
@@ -499,7 +502,7 @@ docompress(const char *in, char *out, const struct compressor *method,
 		ifd = dup(STDIN_FILENO);
 	else
 		ifd = open(in, O_RDONLY);
-	if (ifd < 0) {
+	if (ifd == -1) {
 		if (verbose >= 0)
 			warn("%s", in);
 		return (FAILURE);
@@ -517,7 +520,7 @@ docompress(const char *in, char *out, const struct compressor *method,
 		}
 		ofd = open(out, O_WRONLY|O_CREAT|O_TRUNC, S_IWUSR);
 	}
-	if (ofd < 0) {
+	if (ofd == -1) {
 		if (verbose >= 0)
 			warn("%s", out);
 		(void) close(ifd);
@@ -534,7 +537,8 @@ docompress(const char *in, char *out, const struct compressor *method,
 	}
 
 	if (!pipin && storename) {
-		name = basename(in);
+		strlcpy(namebuf, in, sizeof(namebuf));
+		name = basename(namebuf);
 		mtime = (u_int32_t)sb->st_mtime;
 	}
 	if ((cookie = method->wopen(ofd, name, bits, mtime)) == NULL) {
@@ -636,7 +640,7 @@ dodecompress(const char *in, char *out, struct stat *sb)
 		ifd = dup(STDIN_FILENO);
 	else
 		ifd = open(in, O_RDONLY);
-	if (ifd < 0) {
+	if (ifd == -1) {
 		if (verbose >= 0)
 			warn("%s", in);
 		return -1;
@@ -657,7 +661,7 @@ dodecompress(const char *in, char *out, struct stat *sb)
 		return -1;
 	}
 
-	/* XXX - open constrains outfile to MAXPATHLEN so this is safe */
+	/* XXX - open constrains outfile to PATH_MAX so this is safe */
 	oldname[0] = '\0';
 	if ((cookie = method->ropen(ifd, oldname, 1)) == NULL) {
 		if (verbose >= 0)
@@ -666,12 +670,13 @@ dodecompress(const char *in, char *out, struct stat *sb)
 		return (FAILURE);
 	}
 	if (storename && oldname[0] != '\0') {
+		char *oldbase = basename(oldname);
 		char *cp = strrchr(out, '/');
 		if (cp != NULL) {
 			*(cp + 1) = '\0';
-			strlcat(out, oldname, PATH_MAX);
+			strlcat(out, oldbase, PATH_MAX);
 		} else
-			strlcpy(out, oldname, PATH_MAX);
+			strlcpy(out, oldbase, PATH_MAX);
 		cat = 0;			/* XXX should -c override? */
 	}
 
@@ -690,7 +695,7 @@ dodecompress(const char *in, char *out, struct stat *sb)
 			}
 			ofd = open(out, O_WRONLY|O_CREAT|O_TRUNC, S_IWUSR);
 		}
-		if (ofd < 0) {
+		if (ofd == -1) {
 			if (verbose >= 0)
 				warn("%s", in);
 			method->close(cookie, NULL, NULL, NULL);

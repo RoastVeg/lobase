@@ -19,6 +19,9 @@
 #include <sys/types.h>
 
 #include <ctype.h>
+#ifdef __linux__
+#include <stdint.h>
+#endif
 #include <string.h>
 
 #include "file.h"

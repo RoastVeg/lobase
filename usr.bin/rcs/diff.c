@@ -1,4 +1,4 @@
-/*	$OpenBSD: diff.c,v 1.39 2016/10/16 13:35:51 okan Exp $	*/
+/*	$OpenBSD: diff.c,v 1.40 2019/06/28 13:35:03 deraadt Exp $	*/
 /*
  * Copyright (C) Caldera International Inc.  2001-2002.
  * All rights reserved.
@@ -64,7 +64,6 @@
  *	@(#)diffreg.c   8.1 (Berkeley) 6/6/93
  */
 
-
 #include <sys/stat.h>
 
 #include <ctype.h>
@@ -75,7 +74,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
 #include <unistd.h>
 #include <limits.h>
 
@@ -329,12 +327,12 @@ diffreg(const char *file1, const char *file2, BUF *out, int flags)
 		goto closem;
 	}
 
-	if (fstat(fileno(f1), &stb1) < 0) {
+	if (fstat(fileno(f1), &stb1) == -1) {
 		warn("%s", file1);
 		goto closem;
 	}
 
-	if (fstat(fileno(f2), &stb2) < 0) {
+	if (fstat(fileno(f2), &stb2) == -1) {
 		warn("%s", file2);
 		goto closem;
 	}
@@ -851,7 +849,7 @@ preadline(int fd, size_t rlen, off_t off)
 	ssize_t nr;
 
 	line = xmalloc(rlen + 1);
-	if ((nr = pread(fd, line, rlen, off)) < 0)
+	if ((nr = pread(fd, line, rlen, off)) == -1)
 		err(D_ERROR, "preadline");
 	line[nr] = '\0';
 	return (line);

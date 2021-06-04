@@ -1,4 +1,4 @@
-/*	$OpenBSD: pr.c,v 1.41 2017/12/23 20:53:07 cheloha Exp $	*/
+/*	$OpenBSD: pr.c,v 1.44 2020/12/13 15:36:36 jmc Exp $	*/
 
 /*-
  * Copyright (c) 1991 Keith Muller.
@@ -64,7 +64,7 @@
  * pr: more boundary conditions than a four-legged porcupine
  *
  * the original version didn't support form-feeds, while many of the ad-hoc
- * pr implementations out there do.  Addding this and making it work reasonably
+ * pr implementations out there do.  Adding this and making it work reasonably
  * in all four output modes required quite a bit of hacking and a few minor
  * bugs were noted and fixed in the process.  Some implementations have this
  * as the as -f, some as -F so we accept either.
@@ -1462,7 +1462,7 @@ nxtfile(int argc, char *argv[], char **fname, char *buf, int dt)
 	    *fname = FNAME;
 	if (nohead)
 	    return(inf);
-	curtime = time(NULL);;
+	curtime = time(NULL);
 	timeptr = localtime(&curtime);
     }
     for (; eoptind < argc; ++eoptind) {
@@ -1507,7 +1507,7 @@ nxtfile(int argc, char *argv[], char **fname, char *buf, int dt)
 		curtime = time(NULL);
 		timeptr = localtime(&curtime);
 	    } else {
-		if (fstat(fileno(inf), &statbuf) < 0) {
+		if (fstat(fileno(inf), &statbuf) == -1) {
 		    ++errcnt;
 		    (void)fclose(inf);
 		    ferrout("pr: Cannot stat %s, %s\n",

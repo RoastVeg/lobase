@@ -1,4 +1,4 @@
-/*	$OpenBSD: nologin.c,v 1.6 2015/10/13 07:10:38 doug Exp $	*/
+/*	$OpenBSD: nologin.c,v 1.8 2019/06/28 13:32:45 deraadt Exp $	*/
 
 /*
  * Copyright (c) 1997, Jason Downs.  All rights reserved.
@@ -46,11 +46,13 @@ main(int argc, char *argv[])
 	ssize_t nrd;
 	char nbuf[BUFSIZ];
 
+	if (unveil(_PATH_NOLOGIN_TXT, "r") == -1)
+		err(1, "unveil");
 	if (pledge("stdio rpath", NULL) == -1)
 		err(1, "pledge");
 
 	nfd = open(_PATH_NOLOGIN_TXT, O_RDONLY);
-	if (nfd < 0) {
+	if (nfd == -1) {
 		write(STDOUT_FILENO, DEFAULT_MESG, strlen(DEFAULT_MESG));
 		exit (1);
 	}

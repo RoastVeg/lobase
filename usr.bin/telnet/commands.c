@@ -1,4 +1,4 @@
-/*	$OpenBSD: commands.c,v 1.85 2017/07/19 12:25:52 deraadt Exp $	*/
+/*	$OpenBSD: commands.c,v 1.87 2019/06/28 13:35:04 deraadt Exp $	*/
 /*	$NetBSD: commands.c,v 1.14 1996/03/24 22:03:48 jtk Exp $	*/
 
 /*
@@ -58,19 +58,27 @@ typedef struct {
 	int	needconnect;	/* Do we need to be connected to execute? */
 } Command;
 
+#define        MAXARGV         20
+
 static char line[256];
 static int margc;
-static char *margv[20];
+static char *margv[MAXARGV+1];
 
-static void
+static int
 makeargv(void)
 {
     char *cp, *cp2, c;
     char **argp = margv;
+    int ret = 0;
 
     margc = 0;
     cp = line;
     while ((c = *cp)) {
+        if (margc >= MAXARGV) {
+            printf("too many arguments\n");
+            ret = 1;
+            break;
+        }
 	int inquote = 0;
 	while (isspace((unsigned char)c))
 	    c = *++cp;
@@ -105,6 +113,7 @@ makeargv(void)
 	cp++;
     }
     *argp++ = 0;
+    return (ret);
 }
 
 /*
@@ -1707,7 +1716,8 @@ cmdrc(char *m1, char *m2)
 		continue;
 	    gotmachine = 1;
 	}
-	makeargv();
+	if (makeargv())
+	    continue;
 	if (margv[0] == 0)
 	    continue;
 	c = getcmd(margv[0]);
@@ -1751,7 +1761,8 @@ tn(int argc, char *argv[])
 	strlcpy(line, "open ", sizeof(line));
 	printf("(to) ");
 	(void) fgets(&line[strlen(line)], sizeof(line) - strlen(line), stdin);
-	makeargv();
+	if (makeargv())
+            return 0;
 	argc = margc;
 	argv = margv;
     }
@@ -1834,7 +1845,7 @@ tn(int argc, char *argv[])
 	    printf("Trying %s...\r\n", hbuf);
 	}
 	net = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-	if (net < 0)
+	if (net == -1)
 	    continue;
 
 	if (aliasp) {
@@ -1851,7 +1862,7 @@ tn(int argc, char *argv[])
 		net = -1;
 		continue;
 	    }
-	    if (bind(net, ares->ai_addr, ares->ai_addrlen) < 0) {
+	    if (bind(net, ares->ai_addr, ares->ai_addrlen) == -1) {
 		perror(aliasp);
 		(void) close(net);   /* dump descriptor */
 		net = -1;
@@ -1863,18 +1874,18 @@ tn(int argc, char *argv[])
 
 	switch (res->ai_family) {
 	case AF_INET:
-		if (setsockopt(net, IPPROTO_IP, IP_TOS, &tos, sizeof(tos)) < 0
+		if (setsockopt(net, IPPROTO_IP, IP_TOS, &tos, sizeof(tos)) == -1
 		    && errno != ENOPROTOOPT)
 			perror("telnet: setsockopt (IP_TOS) (ignored)");
 		break;
 	case AF_INET6:
 		if (setsockopt(net, IPPROTO_IPV6, IPV6_TCLASS, &tos,
-		    sizeof(tos)) < 0 && errno != ENOPROTOOPT)
+		    sizeof(tos)) == -1 && errno != ENOPROTOOPT)
 			perror("telnet: setsockopt (IPV6_TCLASS) (ignored)");
 		break;
 	}
 
-	if (connect(net, res->ai_addr, res->ai_addrlen) < 0) {
+	if (connect(net, res->ai_addr, res->ai_addrlen) == -1) {
 	    char hbuf[NI_MAXHOST];
 
 	    if (getnameinfo(res->ai_addr, res->ai_addrlen, hbuf, sizeof(hbuf),
@@ -2021,7 +2032,8 @@ command(int top, char *tbuf, int cnt)
 	}
 	if (line[0] == 0)
 	    break;
-	makeargv();
+	if (makeargv())
+            break;
 	if (margv[0] == 0) {
 	    break;
 	}

@@ -1,4 +1,4 @@
-.\"	$OpenBSD: pkg-config.1,v 1.31 2015/02/28 21:51:56 bentley Exp $
+.\"	$OpenBSD: pkg-config.1,v 1.35 2020/09/15 07:18:45 jasper Exp $
 .\"
 .\"	Copyright (c) 2006 Chris Kuethe <ckuethe@openbsd.org>
 .\"
@@ -14,7 +14,7 @@
 .\"	ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
 .\"	OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 .\"
-.Dd $Mdocdate: February 28 2015 $
+.Dd $Mdocdate: September 15 2020 $
 .Dt PKG-CONFIG 1
 .Os
 .Sh NAME
@@ -130,6 +130,8 @@ Return the compiler and/or linker flags required for static linking.
 Allow packages not controlled by
 .Nm
 to be used.
+.It Cm --validate
+Validate the package without processing its dependencies.
 .It Cm --variable Ar name
 Fetch the value of the named variable.
 .It Cm --version
@@ -174,12 +176,18 @@ Thus -I/usr/local/include will become -I/target/usr/local/include when
 PKG_CONFIG_SYSROOT_DIR is set to /target, which is useful when cross compiling
 packages that use
 .Nm .
+.It Ev PKG_CONFIG_SYSTEM_INCLUDE_PATH
+When set to a list of paths, separated by :, these paths will be excluded from
+the output of include paths set with
+.Fl I .
 .It Ev PKG_CONFIG_TOP_BUILD_DIR
 If set
 .Nm
 uses the specified value for
 .Em pc_top_builddir
 instead of $(top_builddir).
+.It Ev PKG_CONFIG_$PACKAGE_$VARIABLE
+Override the $VARIABLE in $PACKAGE with the given value.
 .El
 .Sh EXIT STATUS
 .Ex -std pkg-config
@@ -192,6 +200,7 @@ The
 utility first appeared in
 .Ox 4.1 .
 .Sh AUTHORS
+.An -nosplit
 .Nm
 was written by
 .An Chris Kuethe Aq Mt ckuethe@openbsd.org
