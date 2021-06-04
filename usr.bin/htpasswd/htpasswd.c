@@ -16,6 +16,11 @@
  */
 
 #include <sys/stat.h>
+#ifdef __linux__
+#ifndef __GLIBC__
+#include <sys/file.h>
+#endif
+#endif
 
 #include <err.h>
 #include <errno.h>

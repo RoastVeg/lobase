@@ -35,6 +35,11 @@
 
 #include <sys/types.h>
 #include <sys/ioctl.h>
+#ifdef __linux__
+#ifndef __GLIBC__
+#include <sys/ttydefaults.h>
+#endif
+#endif
 
 #include <err.h>
 #include <errno.h>

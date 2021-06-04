@@ -26,7 +26,9 @@
  */
 
 #include <stdio.h>
+#ifdef __GLIBC__
 #include <sys/cdefs.h>
+#endif
 #include <sys/types.h>
 #include <string.h>
 
@@ -48,6 +50,4 @@ fgetln(FILE *stream, size_t *len)
 		return line;
 	}
 }
-#else
-#error "Function fgetln() needs to be ported."
 #endif

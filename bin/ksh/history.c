@@ -14,6 +14,9 @@
 
 #include <sys/stat.h>
 #ifdef __linux__
+#ifndef __GLIBC__
+#include <sys/file.h>
+#endif
 #include <sys/time.h>
 #endif
 
